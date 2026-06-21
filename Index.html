@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexVPN — Secure Connection</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a0f;
+    --surface: #0b1118;
+    --card: #0f1822;
+    --border: #1a2840;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff3d6a;
+    --text: #e8f4ff;
+    --muted: #4a6580;
+    --glow: rgba(0,212,255,0.15);
+    --glow2: rgba(0,255,157,0.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 24px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 0 12px var(--glow);
+  }
+
+  .logo-icon svg { width: 18px; height: 18px; }
+
+  .logo-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .logo-name span { color: var(--accent2); }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.4s;
+  }
+
+  .status-dot.active {
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── MAIN POWER ORB ── */
+  .orb-container {
+    display: flex;
+    justify-content: center;
+    padding: 30px 0 24px;
+    position: relative;
+  }
+
+  .orb-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .orb-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    transform: translate(-50%, -50%);
+    animation: ringExpand 3s ease-out infinite;
+  }
+
+  .orb-ring:nth-child(1) { width: 180px; height: 180px; border-color: rgba(0,212,255,0.15); animation-delay: 0s; }
+  .orb-ring:nth-child(2) { width: 220px; height: 220px; border-color: rgba(0,212,255,0.08); animation-delay: 0.8s; }
+  .orb-ring:nth-child(3) { width: 260px; height: 260px; border-color: rgba(0,212,255,0.04); animation-delay: 1.6s; }
+
+  @keyframes ringExpand {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.9); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+  }
+
+  .orb-ring.connected { border-color: rgba(0,255,157,0.2); }
+  .orb-ring.connected:nth-child(2) { border-color: rgba(0,255,157,0.1); }
+  .orb-ring.connected:nth-child(3) { border-color: rgba(0,255,157,0.05); }
+
+  .power-btn {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #1a2a3a, #0a1520);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+    box-shadow:
+      0 0 0 6px rgba(0,212,255,0.05),
+      inset 0 2px 4px rgba(255,255,255,0.05),
+      0 8px 32px rgba(0,0,0,0.6);
+    outline: none;
+    user-select: none;
+  }
+
+  .power-btn:hover {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 6px rgba(0,212,255,0.1),
+      0 0 40px rgba(0,212,255,0.2),
+      inset 0 2px 4px rgba(255,255,255,0.05),
+      0 8px 32px rgba(0,0,0,0.6);
+    transform: scale(1.03);
+  }
+
+  .power-btn:active { transform: scale(0.97); }
+
+  .power-btn.connecting {
+    border-color: rgba(255, 200, 0, 0.6);
+    animation: connectingPulse 0.8s ease-in-out infinite;
+  }
+
+  @keyframes connectingPulse {
+    0%, 100% { box-shadow: 0 0 0 6px rgba(255,200,0,0.05), 0 0 20px rgba(255,200,0,0.1); }
+    50% { box-shadow: 0 0 0 12px rgba(255,200,0,0.1), 0 0 40px rgba(255,200,0,0.3); }
+  }
+
+  .power-btn.connected {
+    border-color: var(--accent2);
+    box-shadow:
+      0 0 0 6px rgba(0,255,157,0.1),
+      0 0 40px rgba(0,255,157,0.3),
+      inset 0 2px 4px rgba(255,255,255,0.05),
+      0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .power-icon {
+    width: 40px; height: 40px;
+    transition: all 0.3s;
+  }
+
+  .power-icon path, .power-icon line {
+    stroke: var(--muted);
+    transition: stroke 0.3s;
+  }
+
+  .power-btn.connected .power-icon path,
+  .power-btn.connected .power-icon line {
+    stroke: var(--accent2);
+    filter: drop-shadow(0 0 4px var(--accent2));
+  }
+
+  .power-btn.connecting .power-icon path,
+  .power-btn.connecting .power-icon line {
+    stroke: #ffc800;
+  }
+
+  .power-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    transition: color 0.3s;
+  }
+
+  .power-btn.connected .power-label { color: var(--accent2); }
+  .power-btn.connecting .power-label { color: #ffc800; }
+
+  /* ── STATUS CARD ── */
+  .status-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .status-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .status-card.active::before { opacity: 1; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+  }
+
+  .stat + .stat {
+    border-left: 1px solid var(--border);
+  }
+
+  .stat-val {
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    transition: color 0.3s;
+  }
+
+  .stat-val.green { color: var(--accent2); }
+  .stat-val.red { color: var(--accent3); }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── IP DISPLAY ── */
+  .ip-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+
+  .ip-label { color: var(--muted); letter-spacing: 1px; }
+  .ip-value { color: var(--accent); letter-spacing: 0.5px; }
+
+  .ip-masked {
+    color: var(--accent2);
+    display: none;
+  }
+
+  .ip-masked.show { display: inline; }
+  .ip-value.hide { display: none; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 12px;
+    padding-left: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ── SERVER LIST ── */
+  .server-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .server-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .server-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: transparent;
+    border-radius: 3px 0 0 3px;
+    transition: background 0.25s;
+  }
+
+  .server-item:hover {
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.03);
+    transform: translateX(3px);
+  }
+
+  .server-item:hover::before { background: var(--accent); }
+
+  .server-item.selected {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+    box-shadow: 0 0 20px rgba(0,212,255,0.1);
+  }
+
+  .server-item.selected::before { background: var(--accent); }
+
+  .server-item.connected-server {
+    border-color: var(--accent2);
+    background: rgba(0,255,157,0.05);
+  }
+
+  .server-item.connected-server::before { background: var(--accent2); }
+
+  .flag {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .server-info { flex: 1; min-width: 0; }
+
+  .server-name {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .server-detail {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .server-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .ping {
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 600;
+  }
+
+  .ping.low { color: var(--accent2); }
+  .ping.mid { color: #ffc800; }
+  .ping.high { color: var(--accent3); }
+
+  .signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+  }
+
+  .bar {
+    width: 4px;
+    border-radius: 1px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .bar:nth-child(1) { height: 4px; }
+  .bar:nth-child(2) { height: 8px; }
+  .bar:nth-child(3) { height: 12px; }
+  .bar:nth-child(4) { height: 16px; }
+
+  .signal-bars.s4 .bar { background: var(--accent2); }
+  .signal-bars.s3 .bar:not(:nth-child(4)) { background: var(--accent2); }
+  .signal-bars.s2 .bar:nth-child(1),
+  .signal-bars.s2 .bar:nth-child(2) { background: #ffc800; }
+  .signal-bars.s1 .bar:nth-child(1) { background: var(--accent3); }
+
+  .server-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .badge-premium {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.2);
+  }
+
+  .badge-free {
+    background: rgba(0,255,157,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(0,255,157,0.2);
+  }
+
+  /* ── PROTOCOL SELECTOR ── */
+  .protocol-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .proto-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .proto-btn:hover { border-color: rgba(0,212,255,0.3); color: var(--text); }
+
+  .proto-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+  }
+
+  /* ── BOTTOM CONNECT BTN ── */
+  .connect-bar {
+    position: sticky;
+    bottom: 20px;
+    margin-top: 8px;
+  }
+
+  .connect-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,255,157,0.08));
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    color: var(--accent);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    outline: none;
+    box-shadow: 0 0 24px rgba(0,212,255,0.15);
+  }
+
+  .connect-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.1), transparent);
+    transition: left 0.5s;
+  }
+
+  .connect-btn:hover { 
+    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,255,157,0.15));
+    box-shadow: 0 0 40px rgba(0,212,255,0.3);
+    transform: translateY(-1px);
+  }
+
+  .connect-btn:hover::before { left: 100%; }
+
+  .connect-btn:active { transform: translateY(0); }
+
+  .connect-btn.disconnect {
+    border-color: var(--accent3);
+    color: var(--accent3);
+    background: linear-gradient(135deg, rgba(255,61,106,0.1), transparent);
+    box-shadow: 0 0 24px rgba(255,61,106,0.15);
+  }
+
+  .connect-btn.disconnect:hover {
+    box-shadow: 0 0 40px rgba(255,61,106,0.3);
+    background: linear-gradient(135deg, rgba(255,61,106,0.2), transparent);
+  }
+
+  .connect-btn.loading {
+    border-color: #ffc800;
+    color: #ffc800;
+    background: linear-gradient(135deg, rgba(255,200,0,0.1), transparent);
+    pointer-events: none;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { color: var(--accent3); border-color: rgba(255,61,106,0.3); }
+  .toast.success { color: var(--accent2); border-color: rgba(0,255,157,0.3); }
+
+  /* ── SCANNING ANIMATION ── */
+  @keyframes scanLine {
+    0% { top: 0; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .scanning-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    pointer-events: none;
+  }
+
+  .scanning-overlay.active { display: block; }
+
+  .scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanLine 1.5s linear infinite;
+  }
+
+  /* ── DATA TRANSFER ── */
+  .data-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .data-card {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .data-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .data-icon.up { background: rgba(0,212,255,0.1); }
+  .data-icon.down { background: rgba(0,255,157,0.1); }
+
+  .data-info { flex: 1; }
+
+  .data-amount {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .data-amount.up { color: var(--accent); }
+  .data-amount.down { color: var(--accent2); }
+
+  .data-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+  }
+
+  /* Timer */
+  .timer-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+    transition: color 0.3s;
+  }
+
+  .timer-display.active { color: var(--accent2); }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="logo-name">NEX<span>VPN</span></span>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="headerDot"></div>
+      <span id="headerStatusText">OFFLINE</span>
+    </div>
+  </header>
+
+  <!-- Power Orb -->
+  <div class="orb-container">
+    <div class="orb-rings" id="orbRings">
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+    </div>
+    <button class="power-btn" id="powerBtn" onclick="toggleConnection()">
+      <svg class="power-icon" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+        <line x1="12" y1="2" x2="12" y2="12"/>
+      </svg>
+      <span class="power-label" id="powerLabel">TAP TO CONNECT</span>
+    </button>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-display" id="timerDisplay">00:00:00</div>
+
+  <!-- Stats -->
+  <div class="status-card" id="statusCard">
+    <div class="stat">
+      <span class="stat-val" id="statPing">—</span>
+      <span class="stat-label">PING</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val green" id="statStatus">OFFLINE</span>
+      <span class="stat-label">STATUS</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="statProto">WG</span>
+      <span class="stat-label">PROTOCOL</span>
+    </div>
+  </div>
+
+  <!-- IP Bar -->
+  <div class="ip-bar">
+    <span class="ip-label">IP ADDRESS</span>
+    <span class="ip-value" id="realIp">192.168.1.42</span>
+    <span class="ip-masked" id="maskedIp"></span>
+  </div>
+
+  <!-- Data Transfer -->
+  <div class="data-row">
+    <div class="data-card">
+      <div class="data-icon up">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </div>
+      <div class="data-info">
+        <div class="data-amount up" id="uploadAmt">0.0 MB</div>
+        <div class="data-label">UPLOAD</div>
+      </div>
+    </div>
+    <div class="data-card">
+      <div class="data-icon down">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M19 12l-7 7-7-7"/>
+        </svg>
+      </div>
+      <div class="data-info">
+        <div class="data-amount down" id="downloadAmt">0.0 MB</div>
+        <div class="data-label">DOWNLOAD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Protocol -->
+  <div class="section-label">PROTOCOL</div>
+  <div class="protocol-row">
+    <button class="proto-btn active" onclick="selectProto(this, 'WG')">WireGuard</button>
+    <button class="proto-btn" onclick="selectProto(this, 'OVP')">OpenVPN</button>
+    <button class="proto-btn" onclick="selectProto(this, 'IKE')">IKEv2</button>
+    <button class="proto-btn" onclick="selectProto(this, 'SSH')">SSH</button>
+  </div>
+
+  <!-- Server List -->
+  <div class="section-label">SELECT SERVER</div>
+  <div class="server-list" id="serverList">
+
+    <div class="server-item selected" data-id="us-ny" onclick="selectServer(this)" data-ip="104.28.34.17" data-ping="12" data-country="United States">
+      <span class="flag">🇺🇸</span>
+      <div class="server-info">
+        <div class="server-name">United States — New York</div>
+        <div class="server-detail">us-ny-01.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping low">12ms</span>
+        <div class="signal-bars s4">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-premium">PRO</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="de-fr" onclick="selectServer(this)" data-ip="78.46.209.5" data-ping="28" data-country="Germany">
+      <span class="flag">🇩🇪</span>
+      <div class="server-info">
+        <div class="server-name">Germany — Frankfurt</div>
+        <div class="server-detail">de-fr-02.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping low">28ms</span>
+        <div class="signal-bars s4">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-free">FREE</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="jp-tk" onclick="selectServer(this)" data-ip="45.32.155.94" data-ping="62" data-country="Japan">
+      <span class="flag">🇯🇵</span>
+      <div class="server-info">
+        <div class="server-name">Japan — Tokyo</div>
+        <div class="server-detail">jp-tk-01.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping mid">62ms</span>
+        <div class="signal-bars s3">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-premium">PRO</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="gb-ld" onclick="selectServer(this)" data-ip="51.89.134.45" data-ping="35" data-country="United Kingdom">
+      <span class="flag">🇬🇧</span>
+      <div class="server-info">
+        <div class="server-name">United Kingdom — London</div>
+        <div class="server-detail">gb-ld-03.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping low">35ms</span>
+        <div class="signal-bars s4">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-free">FREE</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="sg-sg" onclick="selectServer(this)" data-ip="139.59.204.72" data-ping="88" data-country="Singapore">
+      <span class="flag">🇸🇬</span>
+      <div class="server-info">
+        <div class="server-name">Singapore</div>
+        <div class="server-detail">sg-sg-01.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping mid">88ms</span>
+        <div class="signal-bars s2">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-premium">PRO</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="nl-am" onclick="selectServer(this)" data-ip="37.120.156.18" data-ping="19" data-country="Netherlands">
+      <span class="flag">🇳🇱</span>
+      <div class="server-info">
+        <div class="server-name">Netherlands — Amsterdam</div>
+        <div class="server-detail">nl-am-04.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping low">19ms</span>
+        <div class="signal-bars s4">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-free">FREE</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="ca-to" onclick="selectServer(this)" data-ip="192.99.43.105" data-ping="47" data-country="Canada">
+      <span class="flag">🇨🇦</span>
+      <div class="server-info">
+        <div class="server-name">Canada — Toronto</div>
+        <div class="server-detail">ca-to-01.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping low">47ms</span>
+        <div class="signal-bars s3">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-premium">PRO</span>
+      </div>
+    </div>
+
+    <div class="server-item" data-id="br-sp" onclick="selectServer(this)" data-ip="177.67.80.14" data-ping="124" data-country="Brazil">
+      <span class="flag">🇧🇷</span>
+      <div class="server-info">
+        <div class="server-name">Brazil — São Paulo</div>
+        <div class="server-detail">br-sp-02.nexvpn.io</div>
+      </div>
+      <div class="server-right">
+        <span class="ping high">124ms</span>
+        <div class="signal-bars s1">
+          <div class="bar"></div><div class="bar"></div>
+          <div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="server-badge badge-free">FREE</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Connect Button -->
+  <div class="connect-bar">
+    <button class="connect-btn" id="connectBtn" onclick="toggleConnection()">
+      CONNECT
+    </button>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── STATE ──
+  let state = 'idle'; // idle | connecting | connected
+  let selectedServer = document.querySelector('.server-item.selected');
+  let activeProto = 'WG';
+  let timerInterval = null;
+  let dataInterval = null;
+  let seconds = 0;
+  let uploadMB = 0;
+  let downloadMB = 0;
+
+  // ── SERVER SELECT ──
+  function selectServer(el) {
+    if (state === 'connected') {
+      showToast('Disconnect first to change server', 'error');
+      return;
+    }
+    document.querySelectorAll('.server-item').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedServer = el;
+  }
+
+  // ── PROTOCOL SELECT ──
+  function selectProto(btn, proto) {
+    if (state === 'connected') {
+      showToast('Disconnect first to change protocol', 'error');
+      return;
+    }
+    document.querySelectorAll('.proto-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeProto = proto;
+    document.getElementById('statProto').textContent = proto;
+  }
+
+  // ── TOGGLE CONNECTION ──
+  function toggleConnection() {
+    if (state === 'idle') startConnection();
+    else if (state === 'connected') stopConnection();
+  }
+
+  function startConnection() {
+    if (!selectedServer) { showToast('Please select a server', 'error'); return; }
+
+    state = 'connecting';
+    const btn = document.getElementById('powerBtn');
+    const connectBtn = document.getElementById('connectBtn');
+
+    btn.classList.add('connecting');
+    connectBtn.classList.add('loading');
+    connectBtn.textContent = 'CONNECTING...';
+    document.getElementById('powerLabel').textContent = 'CONNECTING';
+    document.getElementById('statStatus').textContent = 'SYNCING';
+    document.getElementById('statStatus').style.color = '#ffc800';
+
+    const ping = selectedServer.dataset.ping;
+
+    // Simulate handshake delay
+    setTimeout(() => {
+      const maskedIP = generateFakeIP();
+      state = 'connected';
+
+      // Update UI
+      btn.classList.remove('connecting');
+      btn.classList.add('connected');
+      document.getElementById('powerLabel').textContent = 'CONNECTED';
+      document.getElementById('orbRings').querySelectorAll('.orb-ring').forEach(r => r.classList.add('connected'));
+
+      // Header
+      document.getElementById('headerDot').classList.add('active');
+      document.getElementById('headerStatusText').textContent = 'SECURED';
+
+      // Stats
+      document.getElementById('statusCard').classList.add('active');
+      document.getElementById('statPing').textContent = ping + 'ms';
+      document.getElementById('statPing').style.color = ping < 50 ? 'var(--accent2)' : ping < 100 ? '#ffc800' : 'var(--accent3)';
+      document.getElementById('statStatus').textContent = 'SECURE';
+      document.getElementById('statStatus').style.color = 'var(--accent2)';
+      document.getElementById('statProto').textContent = activeProto;
+
+      // IP masking
+      document.getElementById('realIp').classList.add('hide');
+      const maskedEl = document.getElementById('maskedIp');
+      maskedEl.textContent = maskedIP;
+      maskedEl.classList.add('show');
+
+      // Server highlight
+      selectedServer.classList.add('connected-server');
+
+      // Connect button
+      connectBtn.classList.remove('loading');
+      connectBtn.classList.add('disconnect');
+      connectBtn.textContent = 'DISCONNECT';
+
+      // Timer
+      seconds = 0;
+      timerInterval = setInterval(updateTimer, 1000);
+      document.getElementById('timerDisplay').classList.add('active');
+
+      // Data simulation
+      uploadMB = 0; downloadMB = 0;
+      dataInterval = setInterval(updateData, 800);
+
+      showToast('🔒 Connected — ' + selectedServer.querySelector('.server-name').textContent.split('—')[0].trim(), 'success');
+    }, 2200);
+  }
+
+  function stopConnection() {
+    state = 'idle';
+    const btn = document.getElementById('powerBtn');
+    const connectBtn = document.getElementById('connectBtn');
+
+    btn.classList.remove('connected', 'connecting');
+    document.getElementById('powerLabel').textContent = 'TAP TO CONNECT';
+    document.getElementById('orbRings').querySelectorAll('.orb-ring').forEach(r => r.classList.remove('connected'));
+
+    document.getElementById('headerDot').classList.remove('active');
+    document.getElementById('headerStatusText').textContent = 'OFFLINE';
+    document.getElementById('statusCard').classList.remove('active');
+
+    document.getElementById('statPing').textContent = '—';
+    document.getElementById('statPing').style.color = 'var(--accent)';
+    document.getElementById('statStatus').textContent = 'OFFLINE';
+    document.getElementById('statStatus').style.color = 'var(--muted)';
+
+    document.getElementById('realIp').classList.remove('hide');
+    document.getElementById('maskedIp').classList.remove('show');
+
+    selectedServer.classList.remove('connected-server');
+
+    connectBtn.classList.remove('disconnect', 'loading');
+    connectBtn.textContent = 'CONNECT';
+
+    clearInterval(timerInterval);
+    clearInterval(dataInterval);
+    document.getElementById('timerDisplay').textContent = '00:00:00';
+    document.getElementById('timerDisplay').classList.remove('active');
+    document.getElementById('uploadAmt').textContent = '0.0 MB';
+    document.getElementById('downloadAmt').textContent = '0.0 MB';
+
+    showToast('Disconnected', '');
+  }
+
+  // ── HELPERS ──
+  function generateFakeIP() {
+    const ranges = [
+      () => `10.${r(0,255)}.${r(0,255)}.${r(1,254)}`,
+      () => `172.${r(16,31)}.${r(0,255)}.${r(1,254)}`,
+      () => `192.168.${r(0,255)}.${r(1,254)}`
+    ];
+    function r(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+    return ranges[Math.floor(Math.random()*3)]();
+  }
+
+  function updateTimer() {
+    seconds++;
+    const h = String(Math.floor(seconds/3600)).padStart(2,'0');
+    const m = String(Math.floor((seconds%3600)/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+    document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+  }
+
+  function updateData() {
+    uploadMB += (Math.random() * 0.8 + 0.1);
+    downloadMB += (Math.random() * 2.5 + 0.5);
+    document.getElementById('uploadAmt').textContent = uploadMB < 1000
+      ? uploadMB.toFixed(1) + ' MB' : (uploadMB/1024).toFixed(2) + ' GB';
+    document.getElementById('downloadAmt').textContent = downloadMB < 1000
+      ? downloadMB.toFixed(1) + ' MB' : (downloadMB/1024).toFixed(2) + ' GB';
+  }
+
+  let toastTimer;
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
